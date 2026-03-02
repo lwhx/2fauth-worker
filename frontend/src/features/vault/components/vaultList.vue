@@ -78,7 +78,7 @@
               </el-dropdown>
             </div>
             
-            <p class="vault-name">{{ vaultItem.account }}</p>
+            <p class="vault-name">{{ vaultItem.account?.includes(':') ? vaultItem.account.split(':').pop() : vaultItem.account }}</p>
             
             <div class="code-display-area">
               <div class="code-left">

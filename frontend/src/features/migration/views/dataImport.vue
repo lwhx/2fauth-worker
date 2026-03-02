@@ -45,7 +45,7 @@
                   <h4>📱 移动端 2FA App</h4>
                   <div class="tags">
                     <el-tag type="info" effect="plain">2FAS (.2fas)</el-tag>
-                    <el-tag type="info" effect="plain">Aegis (.json)</el-tag>
+                    <el-tag type="info" effect="plain">Aegis (.json/.txt)</el-tag>
                     <el-tag type="info" effect="plain">Bitwarden Authenticator (.json/.csv)</el-tag>
                     <el-tag type="info" effect="plain">Google Authenticator (.png/.jpg)</el-tag>
                   </div>

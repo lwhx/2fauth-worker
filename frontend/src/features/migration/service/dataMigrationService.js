@@ -288,7 +288,7 @@ export const dataMigrationService = {
                     writeBytes(sBytes, otpBytes)
                 }
 
-                const name = acc.account ? `${acc.service}:${acc.account}` : acc.service
+                const name = acc.account || acc.service
                 if (name) {
                     otpBytes.push(18)
                     writeString(name, otpBytes)
@@ -366,7 +366,7 @@ export const dataMigrationService = {
     `)
 
         for (const acc of vault) {
-            const label = encodeURIComponent(`${acc.service}:${acc.account}`)
+            const label = encodeURIComponent(`${acc.account}`)
             const issuer = encodeURIComponent(acc.service)
             const uri = `otpauth://totp/${label}?secret=${acc.secret}&issuer=${issuer}&digits=${acc.digits}&period=${acc.period}`
 
@@ -438,28 +438,40 @@ export const dataMigrationService = {
             if (Array.isArray(json.accounts)) rawVault = json.accounts
             else if (Array.isArray(json.vault)) rawVault = json.vault
             else if (Array.isArray(json.data)) rawVault = json.data
-            else if (Array.isArray(json.secrets)) {
-                rawVault = json.secrets.map(s => ({
-                    service: s.issuer || s.service || s.name || 'Unknown',
-                    account: s.account || s.label || '',
-                    secret: s.secret || '',
-                    algorithm: s.algorithm || 'SHA1',
-                    digits: s.digits || 6,
-                    period: s.period || 30,
-                }))
+            else if (json.secrets) {
+                rawVault = json.secrets.map(s => {
+                    let account = s.account || s.label || '';
+                    if (typeof account === 'string' && account.includes(':')) {
+                        account = account.split(':').pop()?.trim() || account;
+                    }
+                    return {
+                        service: s.issuer || s.service || s.name || 'Unknown',
+                        account,
+                        secret: s.secret || '',
+                        algorithm: s.algorithm || 'SHA1',
+                        digits: s.digits || 6,
+                        period: s.period || 30,
+                    }
+                })
             } else if (Array.isArray(json)) rawVault = json
         }
         else if (type === '2fas') {
             const json = typeof content === 'string' ? JSON.parse(content) : content
             if (Array.isArray(json.services)) {
-                rawVault = json.services.map(s => ({
-                    service: s.otp?.issuer || s.name || 'Unknown',
-                    account: s.otp?.account || s.account || s.username || '',
-                    secret: s.secret || '',
-                    algorithm: (s.otp?.algorithm || s.algorithm || 'SHA1').toUpperCase(),
-                    digits: s.otp?.digits || s.digits || 6,
-                    period: s.otp?.period || s.period || 30,
-                }))
+                rawVault = json.services.map(s => {
+                    let account = s.otp?.account || s.account || s.username || '';
+                    if (typeof account === 'string' && account.includes(':')) {
+                        account = account.split(':').pop()?.trim() || account;
+                    }
+                    return {
+                        service: s.otp?.issuer || s.name || 'Unknown',
+                        account,
+                        secret: s.secret || '',
+                        algorithm: (s.otp?.algorithm || s.algorithm || 'SHA1').toUpperCase(),
+                        digits: s.otp?.digits || s.digits || 6,
+                        period: s.otp?.period || s.period || 30,
+                    }
+                })
             }
         }
         else if (type === 'bwauth_json') {
@@ -499,6 +511,9 @@ export const dataMigrationService = {
         else if (type === 'bwauth_csv' || type === 'generic_csv') rawVault = csvStrategy.parseCsv(content)
 
         return rawVault.map(acc => {
+            if (typeof acc.account === 'string' && acc.account.includes(':')) {
+                acc.account = acc.account.split(':').pop()?.trim() || acc.account
+            }
             if (!acc.account || acc.account.trim() === '') acc.account = acc.service || 'Unknown Account'
             return acc
         }).filter(acc => acc && acc.secret && acc.service)
