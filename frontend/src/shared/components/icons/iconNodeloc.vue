@@ -16,3 +16,6 @@
     </defs>
   </svg>
 </template>
+<script>
+export default { name: 'iconNodeloc' }
+</script>
